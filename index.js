@@ -16,7 +16,6 @@ app.get("/cards", (req, res) => {
     .catch((error) => res.json(error));
 });
 
-
 app.get("/cards/:title", (req, res) => {
   const title = req.params.title.toLowerCase(); // Convert title to lowercase
 
@@ -29,6 +28,21 @@ app.get("/cards/:title", (req, res) => {
       }
     })
     .catch((error) => res.status(500).json({ message: error.message }));
+});
+
+app.post("/cards", (req, res) => {
+  const { title, description, link } = req.body;
+
+  const newCard = new SectionsModel({
+    title,
+    description,
+    link,
+  });
+
+  newCard
+    .save()
+    .then((card) => res.status(201).json(card))
+    .catch((error) => res.status(400).json({ message: error.message }));
 });
 
 app.get("/", (req, res) => {
