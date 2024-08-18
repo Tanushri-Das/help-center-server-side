@@ -23,11 +23,13 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    const sectionsCollection = client.db("help-center-project").collection("sections");
+    const sectionsCollection = client
+      .db("help-center-project")
+      .collection("sections");
 
     app.get("/cards", async (req, res) => {
       try {
-        const sections = await sectionsCollection.find().toArray(); 
+        const sections = await sectionsCollection.find().toArray();
         res.json(sections);
       } catch (error) {
         res.status(500).json({ message: "Failed to fetch sections", error });
@@ -66,13 +68,12 @@ async function run() {
       }
     });
   } finally {
-
   }
 }
 
 run().catch(console.dir);
 
-app.get("/", (req, res) => {
+app.get("/ping", (req, res) => {
   res.send("server is running");
 });
 
