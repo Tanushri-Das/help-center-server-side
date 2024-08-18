@@ -1,57 +1,88 @@
 const express = require("express");
-const mongoose = require("mongoose");
 const app = express();
 const cors = require("cors");
 const port = process.env.PORT || 5000;
+require("dotenv").config();
 const SectionsModel = require("./models/CardData");
+const { MongoClient, ServerApiVersion } = require("mongodb");
 
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect("mongodb://127.0.0.1:27017/help-center");
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@projects.x1epn.mongodb.net/?retryWrites=true&w=majority&appName=projects`;
 
-app.get("/cards", (req, res) => {
-  SectionsModel.find()
-    .then((sections) => res.json(sections))
-    .catch((error) => res.json(error));
+console.log(uri);
+
+// Create a MongoClient with a MongoClientOptions object to set the Stable API version
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  },
 });
 
-app.get("/cards/:title", (req, res) => {
-  const title = req.params.title.toLowerCase();
+async function run() {
+  try {
+    await client.connect();
 
-  SectionsModel.find({ title: new RegExp(`^${title}$`, "i") })
-    .then((sections) => {
-      if (sections.length > 0) {
+    const sectionsCollection = client
+      .db("help-center-project")
+      .collection("sections");
+
+    // Endpoint to get all sections
+    app.get("/cards", async (req, res) => {
+      try {
+        const sections = await sectionsCollection.find().toArray(); // Fetch all sections
         res.json(sections);
-      } else {
-        res.status(404).json({ message: "Card not found" });
+      } catch (error) {
+        res.status(500).json({ message: "Failed to fetch sections", error });
       }
-    })
-    .catch((error) => res.status(500).json({ message: error.message }));
-});
+    });
 
-app.post("/cards", (req, res) => {
-  const { title, description, link } = req.body;
+    app.get("/cards/:title", async (req, res) => {
+      try {
+        const title = req.params.title.toLowerCase();
+        const section = await sectionsCollection.findOne({
+          title: new RegExp(`^${title}$`, "i"),
+        });
 
-  if (!title || !description || !link) {
-    return res.status(400).json({ message: "All fields are required" });
+        if (section) {
+          res.json([section]); // Return the section as an array (for consistency with multiple sections)
+        } else {
+          res.status(404).json({ message: "Card not found" });
+        }
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    });
+
+    app.post("/cards", async (req, res) => {
+      try {
+        const newSectionData = new SectionsModel(req.body);
+        await newSectionData.validate();
+
+        // Insert the validated data into the sectionsCollection
+        const result = await sectionsCollection.insertOne(newSectionData);
+        res.json(result); // Send back the insertion result
+      } catch (error) {
+        console.error("Error in POST /cards:", error.message);
+        res
+          .status(500)
+          .json({ message: "Failed to create section", error: error.message });
+      }
+    });
+  } finally {
+    // Do any necessary cleanup here
   }
+}
 
-  const newCard = new SectionsModel({
-    title,
-    description,
-    link,
-  });
-
-  newCard
-    .save()
-    .then((card) => res.status(201).json(card))
-    .catch((error) => res.status(500).json({ message: error.message }));
-});
+run().catch(console.dir);
 
 app.get("/", (req, res) => {
   res.send("server is running");
 });
+
 app.listen(port, () => {
   console.log(`server is running on port ${port}`);
 });
