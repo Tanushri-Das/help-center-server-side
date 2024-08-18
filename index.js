@@ -13,7 +13,6 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@project
 
 console.log(uri);
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -24,16 +23,11 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect();
+    const sectionsCollection = client.db("help-center-project").collection("sections");
 
-    const sectionsCollection = client
-      .db("help-center-project")
-      .collection("sections");
-
-    // Endpoint to get all sections
     app.get("/cards", async (req, res) => {
       try {
-        const sections = await sectionsCollection.find().toArray(); // Fetch all sections
+        const sections = await sectionsCollection.find().toArray(); 
         res.json(sections);
       } catch (error) {
         res.status(500).json({ message: "Failed to fetch sections", error });
@@ -48,7 +42,7 @@ async function run() {
         });
 
         if (section) {
-          res.json([section]); // Return the section as an array (for consistency with multiple sections)
+          res.json([section]);
         } else {
           res.status(404).json({ message: "Card not found" });
         }
@@ -62,9 +56,8 @@ async function run() {
         const newSectionData = new SectionsModel(req.body);
         await newSectionData.validate();
 
-        // Insert the validated data into the sectionsCollection
         const result = await sectionsCollection.insertOne(newSectionData);
-        res.json(result); // Send back the insertion result
+        res.json(result);
       } catch (error) {
         console.error("Error in POST /cards:", error.message);
         res
@@ -73,7 +66,7 @@ async function run() {
       }
     });
   } finally {
-    // Do any necessary cleanup here
+
   }
 }
 
