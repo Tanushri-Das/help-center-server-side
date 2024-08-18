@@ -17,9 +17,9 @@ app.get("/cards", (req, res) => {
 });
 
 app.get("/cards/:title", (req, res) => {
-  const title = req.params.title.toLowerCase(); // Convert title to lowercase
+  const title = req.params.title.toLowerCase();
 
-  SectionsModel.find({ title: new RegExp(`^${title}$`, "i") }) // Use regex for case-insensitive search
+  SectionsModel.find({ title: new RegExp(`^${title}$`, "i") })
     .then((sections) => {
       if (sections.length > 0) {
         res.json(sections);
@@ -33,6 +33,10 @@ app.get("/cards/:title", (req, res) => {
 app.post("/cards", (req, res) => {
   const { title, description, link } = req.body;
 
+  if (!title || !description || !link) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
   const newCard = new SectionsModel({
     title,
     description,
@@ -42,7 +46,7 @@ app.post("/cards", (req, res) => {
   newCard
     .save()
     .then((card) => res.status(201).json(card))
-    .catch((error) => res.status(400).json({ message: error.message }));
+    .catch((error) => res.status(500).json({ message: error.message }));
 });
 
 app.get("/", (req, res) => {
