@@ -34,3 +34,7 @@ This will run the server at http://localhost:5000
 2. View All Sections: Users can view all the sections in the UI.
 
 3. Get Details by Title: Users can retrieve the details of a single card by its title.
+
+# Hoisting link
+
+* Server Side Hoisting link : https://help-center-server-side.vercel.app/
